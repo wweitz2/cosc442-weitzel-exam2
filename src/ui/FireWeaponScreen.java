@@ -30,4 +30,10 @@ public class FireWeaponScreen extends TargetBasedScreen {
 		else
 			player.rangedWeaponAttack(other);
 	}
+
+	@Override
+	public void enterWorldCoordinate(int x, int y, int screenX, int screenY) {
+		player.notify("Entered coordinate.");
+		
+	}
 }

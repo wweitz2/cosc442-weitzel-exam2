@@ -14,4 +14,9 @@ public class CastSpellScreen extends TargetBasedScreen {
 	public void selectWorldCoordinate(int x, int y, int screenX, int screenY){
 		player.castSpell(spell, x, y);
 	}
+
+	@Override
+	public void enterWorldCoordinate(int x, int y, int screenX, int screenY) {
+		player.notify("Entered coordinate.");
+	}
 }

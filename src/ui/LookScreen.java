@@ -26,4 +26,9 @@ public class LookScreen extends TargetBasedScreen {
 		Tile tile = player.tile(x, y, player.z);
 		caption = tile.glyph() + " " + tile.details();
 	}
+
+	@Override
+	public void selectWorldCoordinate(int x, int y, int screenX, int screenY) {
+		player.notify("Entered coordinate.");
+	}
 }
