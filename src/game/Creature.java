@@ -75,7 +75,7 @@ public class Creature {
 		
 		while (xp > (int)(Math.pow(level, 1.75) * 25)) {
 			level++;
-			doAction("advance to level %d", level);
+			creatureHelper.doAction("advance to level %d", level);
 			ai.onGainLevel();
 			modifyHp(level * 2, "Died from having a negative level?");
 		}
@@ -106,6 +106,8 @@ public class Creature {
 	private String causeOfDeath;
 	public String causeOfDeath() { return causeOfDeath; }
 	
+	private CreatureHelper creatureHelper;
+	
 	public Creature(World world, char glyph, Color color, String name, int maxHp, int attack, int defense){
 		this.world = world;
 		this.glyph = glyph;
@@ -125,6 +127,7 @@ public class Creature {
 		this.maxMana = 5;
 		this.mana = maxMana;
 		this.regenManaPer1000 = 20;
+		this.creatureHelper = new CreatureHelper(this.world, this);
 	}
 	
 	public void moveBy(int mx, int my, int mz){
@@ -135,16 +138,16 @@ public class Creature {
 		
 		if (mz == -1){
 			if (tile == Tile.STAIRS_DOWN) {
-				doAction("walk up the stairs to level %d", z+mz+1);
+				creatureHelper.doAction("walk up the stairs to level %d", z+mz+1);
 			} else {
-				doAction("try to go up but are stopped by the cave ceiling");
+				creatureHelper.doAction("try to go up but are stopped by the cave ceiling");
 				return;
 			}
 		} else if (mz == 1){
 			if (tile == Tile.STAIRS_UP) {
-				doAction("walk down the stairs to level %d", z+mz+1);
+				creatureHelper.doAction("walk down the stairs to level %d", z+mz+1);
 			} else {
-				doAction("try to go down but are stopped by the cave floor");
+				creatureHelper.doAction("try to go down but are stopped by the cave floor");
 				return;
 			}
 		}
@@ -185,7 +188,7 @@ public class Creature {
 		}
 		params2[params2.length - 1] = amount;
 		
-		doAction(action, params2);
+		creatureHelper.doAction(action, params2);
 		
 		other.modifyHp(-amount, "Killed by a " + name);
 		
@@ -210,7 +213,7 @@ public class Creature {
 		if (hp > maxHp) {
 			hp = maxHp;
 		} else if (hp < 1) {
-			doAction("die");
+			creatureHelper.doAction("die");
 			leaveCorpse();
 			world.remove(this);
 		}
@@ -229,7 +232,7 @@ public class Creature {
 	public void dig(int wx, int wy, int wz) {
 		modifyFood(-10);
 		world.dig(wx, wy, wz);
-		doAction("dig");
+		creatureHelper.doAction("dig");
 	}
 	
 	public void update(){
@@ -284,62 +287,6 @@ public class Creature {
 		ai.onNotify(String.format(message, params));
 	}
 	
-	public void doAction(String message, Object ... params){
-		for (Creature other : getCreaturesWhoSeeMe()){
-			if (other == this){
-				other.notify("You " + message + ".", params);
-			} else {
-				other.notify(String.format("The %s %s.", name, makeSecondPerson(message)), params);
-			}
-		}
-	}
-	
-	public void doAction(Item item, String message, Object ... params){
-		if (hp < 1)
-			return;
-		
-		for (Creature other : getCreaturesWhoSeeMe()){
-			if (other == this){
-				other.notify("You " + message + ".", params);
-			} else {
-				other.notify(String.format("The %s %s.", name, makeSecondPerson(message)), params);
-			}
-			other.learnName(item);
-		}
-	}
-	
-	private List<Creature> getCreaturesWhoSeeMe(){
-		List<Creature> others = new ArrayList<Creature>();
-		int r = 9;
-		for (int ox = -r; ox < r+1; ox++){
-			for (int oy = -r; oy < r+1; oy++){
-				if (ox*ox + oy*oy > r*r)
-					continue;
-				
-				Creature other = world.creature(x+ox, y+oy, z);
-				
-				if (other == null)
-					continue;
-				
-				others.add(other);
-			}
-		}
-		return others;
-	}
-	
-	private String makeSecondPerson(String text){
-		String[] words = text.split(" ");
-		words[0] = words[0] + "s";
-		
-		StringBuilder builder = new StringBuilder();
-		for (String word : words){
-			builder.append(" ");
-			builder.append(word);
-		}
-		
-		return builder.toString().trim();
-	}
-	
 	public boolean canSee(int wx, int wy, int wz){
 		return (detectCreatures > 0 && world.creature(wx, wy, wz) != null
 				|| ai.canSee(wx, wy, wz));
@@ -367,9 +314,9 @@ public class Creature {
 		Item item = world.item(x, y, z);
 		
 		if (inventory.isFull() || item == null){
-			doAction("grab at the ground");
+			creatureHelper.doAction("grab at the ground");
 		} else {
-			doAction("pickup a %s", nameOf(item));
+			creatureHelper.doAction("pickup a %s", nameOf(item));
 			world.remove(x, y, z);
 			inventory.add(item);
 		}
@@ -377,7 +324,7 @@ public class Creature {
 	
 	public void drop(Item item){
 		if (world.addAtEmptySpace(item, x, y, z)){
-			doAction("drop a " + nameOf(item));
+			creatureHelper.doAction("drop a " + nameOf(item));
 			inventory.remove(item);
 			unequip(item);
 		} else {
@@ -403,12 +350,12 @@ public class Creature {
 	}
 	
 	public void eat(Item item){
-		doAction("eat a " + nameOf(item));
+		creatureHelper.doAction("eat a " + nameOf(item));
 		consume(item);
 	}
 	
 	public void quaff(Item item){
-		doAction("quaff a " + nameOf(item));
+		creatureHelper.doAction("quaff a " + nameOf(item));
 		consume(item);
 	}
 	
@@ -447,11 +394,11 @@ public class Creature {
 		
 		if (item == armor){
 			if (hp > 0)
-				doAction("remove a " + nameOf(item));
+				creatureHelper.doAction("remove a " + nameOf(item));
 			armor = null;
 		} else if (item == weapon) {
 			if (hp > 0) 
-				doAction("put away a " + nameOf(item));
+				creatureHelper.doAction("put away a " + nameOf(item));
 			weapon = null;
 		}
 	}
@@ -472,11 +419,11 @@ public class Creature {
 		
 		if (item.attackValue() + item.rangedAttackValue() >= item.defenseValue()){
 			unequip(weapon);
-			doAction("wield a " + nameOf(item));
+			creatureHelper.doAction("wield a " + nameOf(item));
 			weapon = item;
 		} else {
 			unequip(armor);
-			doAction("put on a " + nameOf(item));
+			creatureHelper.doAction("put on a " + nameOf(item));
 			armor = item;
 		}
 	}
@@ -509,7 +456,7 @@ public class Creature {
 		if (c != null)
 			throwAttack(item, c);				
 		else
-			doAction("throw a %s", nameOf(item));
+			creatureHelper.doAction("throw a %s", nameOf(item));
 		
 		if (item.quaffEffect() != null && c != null)
 			getRidOf(item);
@@ -528,10 +475,10 @@ public class Creature {
 		Creature other = creature(x2, y2, z);
 		
 		if (spell.manaCost() > mana){
-			doAction("point and mumble but nothing happens");
+			creatureHelper.doAction("point and mumble but nothing happens");
 			return;
 		} else if (other == null) {
-			doAction("point and mumble at nothing");
+			creatureHelper.doAction("point and mumble at nothing");
 			return;
 		}
 		
