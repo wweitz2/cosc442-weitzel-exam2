@@ -71,10 +71,7 @@ public abstract class TargetBasedScreen implements Screen {
 		return true;
 	}
 
-	public void enterWorldCoordinate(int x, int y, int screenX, int screenY) {
-		
-	}
+	public abstract void enterWorldCoordinate(int x, int y, int screenX, int screenY);
 
-	public void selectWorldCoordinate(int x, int y, int screenX, int screenY){
-	}
+	public abstract void selectWorldCoordinate(int x, int y, int screenX, int screenY);
 }
